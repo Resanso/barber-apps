@@ -7,6 +7,7 @@ import { getUserPrivateItems } from '@/data/anon/privateItems';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import CreatePrivateItemForm from './CreatePrivateItemForm';
 
 
 async function UserPrivateItemsListContainer() {
@@ -60,6 +61,8 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
       <Heading />
+      {/* Create form placed under heading */}
+      <CreatePrivateItemForm />
       <Suspense fallback={<ListSkeleton />}>
         <UserPrivateItemsListContainer />
       </Suspense>

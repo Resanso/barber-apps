@@ -17,11 +17,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import {
-  signInWithMagicLinkAction,
-  signInWithProviderAction,
-  signUpAction,
-} from '@/data/auth/auth';
+import { signInWithProviderAction } from '@/data/auth/auth';
 import type { AuthProvider } from '@/types';
 
 interface SignUpProps {
@@ -32,45 +28,55 @@ export function SignUp({ next }: SignUpProps) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const toastRef = useRef<string | number | undefined>(undefined);
 
-  const { execute: executeMagicLink, status: magicLinkStatus } = useAction(
-    signInWithMagicLinkAction,
-    {
-      onExecute: () => {
-        toastRef.current = toast.loading('Sending magic link...');
-      },
-      onSuccess: () => {
-        toast.success('A magic link has been sent to your email!', {
-          id: toastRef.current,
-        });
-        toastRef.current = undefined;
-        setSuccessMessage('A magic link has been sent to your email!');
-      },
-      onError: ({ error }) => {
-        const errorMessage = error.serverError ?? 'Failed to send magic link';
-        toast.error(errorMessage, { id: toastRef.current });
-        toastRef.current = undefined;
-      },
-    }
-  );
+  const [magicLinkStatus, setMagicLinkStatus] = useState<'idle' | 'sending'>('idle');
 
-  const { execute: executeSignUp, status: signUpStatus } = useAction(
-    signUpAction,
-    {
-      onExecute: () => {
-        toastRef.current = toast.loading('Creating account...');
-      },
-      onSuccess: () => {
-        toast.success('Account created!', { id: toastRef.current });
-        toastRef.current = undefined;
-        setSuccessMessage('A confirmation link has been sent to your email!');
-      },
-      onError: ({ error }) => {
-        const errorMessage = error.serverError ?? 'Failed to create account';
-        toast.error(errorMessage, { id: toastRef.current });
-        toastRef.current = undefined;
-      },
+  async function sendMagicLink(email: string) {
+    try {
+      setMagicLinkStatus('sending');
+      toastRef.current = toast.loading('Sending magic link...');
+      const res = await fetch('/api/auth/magic', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, next }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload?.error ?? 'Failed to send magic link');
+      toast.success('A magic link has been sent to your email!', {
+        id: toastRef.current,
+      });
+      toastRef.current = undefined;
+      setSuccessMessage('A magic link has been sent to your email!');
+    } catch (err: any) {
+      toast.error(err?.message ?? String(err), { id: toastRef.current });
+      toastRef.current = undefined;
+    } finally {
+      setMagicLinkStatus('idle');
     }
-  );
+  }
+
+  const [signUpStatus, setSignUpStatus] = useState<'idle' | 'submitting'>('idle');
+
+  async function signUpFetch(email: string, password?: string) {
+    try {
+      setSignUpStatus('submitting');
+      toastRef.current = toast.loading('Creating account...');
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload?.error ?? 'Failed to create account');
+      toast.success('Account created!', { id: toastRef.current });
+      toastRef.current = undefined;
+      setSuccessMessage('A confirmation link has been sent to your email!');
+    } catch (err: any) {
+      toast.error(err?.message ?? String(err), { id: toastRef.current });
+      toastRef.current = undefined;
+    } finally {
+      setSignUpStatus('idle');
+    }
+  }
 
   const { execute: executeProvider, status: providerStatus } = useAction(
     signInWithProviderAction,
@@ -124,9 +130,9 @@ export function SignUp({ next }: SignUpProps) {
                 </CardHeader>
                 <CardContent className="space-y-2 p-0">
                   <EmailAndPassword
-                    isLoading={signUpStatus === 'executing'}
+                    isLoading={signUpStatus === 'submitting'}
                     onSubmit={(data) => {
-                      executeSignUp({ ...data, next });
+                      void signUpFetch(data.email, data.password);
                     }}
                     view="sign-up"
                   />
@@ -143,8 +149,8 @@ export function SignUp({ next }: SignUpProps) {
                 </CardHeader>
                 <CardContent className="space-y-2 p-0">
                   <Email
-                    onSubmit={(email) => executeMagicLink({ email, next })}
-                    isLoading={magicLinkStatus === 'executing'}
+                    onSubmit={(email) => void sendMagicLink(email)}
+                    isLoading={magicLinkStatus === 'sending'}
                     view="sign-up"
                   />
                 </CardContent>

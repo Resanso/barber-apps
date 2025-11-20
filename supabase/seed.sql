@@ -168,3 +168,38 @@ VALUES
     NOW() - INTERVAL '1 day'
   )
 ON CONFLICT (id) DO NOTHING;
+
+-- Ensure services table exists (used by booking UI)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE TABLE IF NOT EXISTS public.services (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL
+);
+
+-- Add a unique index on name so ON CONFLICT by name works
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'services' AND indexname = 'idx_services_name_unique'
+  ) THEN
+    CREATE UNIQUE INDEX idx_services_name_unique ON public.services (lower(name));
+  END IF;
+END$$;
+
+-- Seed some common services
+INSERT INTO public.services (name)
+VALUES
+  ('Haircut'),
+  ('Beard Trim'),
+  ('Haircut + Shave'),
+  ('Kids Haircut'),
+  ('Coloring')
+ON CONFLICT ON CONSTRAINT idx_services_name_unique DO NOTHING;
+
+-- Ensure we have a few profiles marked as barbers matching seeded auth.users above
+INSERT INTO public.profiles (id, full_name, role)
+VALUES
+  ('11111111-1111-4111-8111-111111111111', 'Olivia Martin', 'barber'),
+  ('22222222-2222-4222-8222-222222222222', 'Liam Patel', 'barber')
+ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, role = EXCLUDED.role;
+

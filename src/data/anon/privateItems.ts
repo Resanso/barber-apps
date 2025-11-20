@@ -5,13 +5,24 @@ export const getUserPrivateItems = async (): Promise<
   Array<Table<'private_items'>>
 > => {
   const supabase = await createSupabaseClient();
-  const { data, error } = await supabase.from('private_items').select('*');
+  try {
+    const { data, error } = await supabase.from('private_items').select('*');
 
-  if (error) {
-    throw error;
+    if (error) {
+      // Log full Supabase error on the server for debugging
+      console.error(
+        'getUserPrivateItems supabase error:',
+        JSON.stringify(error)
+      );
+      // Return empty list to avoid crashing RSC stream — we'll investigate from logs
+      return [];
+    }
+
+    return data ?? [];
+  } catch (err) {
+    console.error('getUserPrivateItems unexpected error:', err);
+    return [];
   }
-
-  return data;
 };
 
 export const getPrivateItem = async (

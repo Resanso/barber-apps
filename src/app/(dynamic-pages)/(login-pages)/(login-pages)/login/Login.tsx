@@ -12,11 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  signInWithMagicLinkAction,
-  signInWithPasswordAction,
-  signInWithProviderAction,
-} from '@/data/auth/auth';
+import { signInWithProviderAction } from '@/data/auth/auth';
 import { useAction } from 'next-safe-action/hooks';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -45,58 +41,56 @@ export function Login({
     }
   }
 
-  const { execute: executeMagicLink, status: magicLinkStatus } = useAction(
-    signInWithMagicLinkAction,
-    {
-      onExecute: () => {
-        toastRef.current = toast.loading('Sending magic link...');
-      },
-      onSuccess: () => {
-        toast.success('A magic link has been sent to your email!', {
-          id: toastRef.current,
-        });
-        toastRef.current = undefined;
-        setEmailSentSuccessMessage('A magic link has been sent to your email!');
-      },
-      onError: (error) => {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : `Send magic link failed ${String(error)}`;
-        toast.error(errorMessage, {
-          id: toastRef.current,
-        });
-        toastRef.current = undefined;
-      },
-    }
-  );
+  const [magicLinkStatus, setMagicLinkStatus] = useState<'idle' | 'sending'>('idle');
 
-  const { execute: executePassword, status: passwordStatus } = useAction(
-    signInWithPasswordAction,
-    {
-      onExecute: () => {
-        toastRef.current = toast.loading('Logging in...');
-      },
-      onSuccess: () => {
-        toast.success('Logged in!', {
-          id: toastRef.current,
-        });
-        toastRef.current = undefined;
-        redirectToDashboard();
-        setRedirectInProgress(true);
-      },
-      onError: (error) => {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : `Sign in account failed ${String(error)}`;
-        toast.error(errorMessage, {
-          id: toastRef.current,
-        });
-        toastRef.current = undefined;
-      },
+  async function sendMagicLink(email: string) {
+    try {
+      setMagicLinkStatus('sending');
+      toastRef.current = toast.loading('Sending magic link...');
+      const res = await fetch('/api/auth/magic', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, next }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload?.error ?? 'Failed to send magic link');
+      toast.success('A magic link has been sent to your email!', {
+        id: toastRef.current,
+      });
+      toastRef.current = undefined;
+      setEmailSentSuccessMessage('A magic link has been sent to your email!');
+    } catch (err: any) {
+      toast.error(err?.message ?? String(err), { id: toastRef.current });
+      toastRef.current = undefined;
+    } finally {
+      setMagicLinkStatus('idle');
     }
-  );
+  }
+
+  const [passwordStatus, setPasswordStatus] = useState<'idle' | 'submitting'>('idle');
+
+  async function signInPassword(email: string, password: string) {
+    try {
+      setPasswordStatus('submitting');
+      toastRef.current = toast.loading('Logging in...');
+      const res = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload?.error ?? 'Sign in failed');
+      toast.success('Logged in!', { id: toastRef.current });
+      toastRef.current = undefined;
+      redirectToDashboard();
+      setRedirectInProgress(true);
+    } catch (err: any) {
+      toast.error(err?.message ?? String(err), { id: toastRef.current });
+      toastRef.current = undefined;
+    } finally {
+      setPasswordStatus('idle');
+    }
+  }
 
   const { execute: executeProvider, status: providerStatus } = useAction(
     signInWithProviderAction,
@@ -155,12 +149,9 @@ export function Login({
                 </CardHeader>
                 <CardContent className="space-y-2 p-0">
                   <EmailAndPassword
-                    isLoading={passwordStatus === 'executing'}
+                    isLoading={passwordStatus === 'submitting'}
                     onSubmit={(data) => {
-                      executePassword({
-                        email: data.email,
-                        password: data.password,
-                      });
+                      void signInPassword(data.email, data.password);
                     }}
                     view="sign-in"
                   />
@@ -178,8 +169,8 @@ export function Login({
                 </CardHeader>
                 <CardContent className="space-y-2 p-0">
                   <Email
-                    onSubmit={(email) => executeMagicLink({ email, next })}
-                    isLoading={magicLinkStatus === 'executing'}
+                    onSubmit={(email) => void sendMagicLink(email)}
+                    isLoading={magicLinkStatus === 'sending'}
                     view="sign-in"
                   />
                 </CardContent>
