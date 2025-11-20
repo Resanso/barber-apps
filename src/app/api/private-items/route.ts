@@ -57,7 +57,7 @@ export async function POST(req: Request) {
           }
         );
 
-        upsertResult = await serviceClient
+        upsertResult = await (serviceClient as any)
           .from('profiles')
           .upsert(profilePayload, { onConflict: 'id' })
           .select()
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         );
       } else {
         // Fallback: try to upsert using the current server client (may fail due to RLS)
-        upsertResult = await supabase
+        upsertResult = await (supabase as any)
           .from('profiles')
           .upsert(profilePayload, { onConflict: 'id' })
           .select()
@@ -96,7 +96,9 @@ export async function POST(req: Request) {
       }
 
       // Confirm profile exists now
-      const { data: existingProfile, error: fetchProfileErr } = await supabase
+      const { data: existingProfile, error: fetchProfileErr } = await (
+        supabase as any
+      )
         .from('profiles')
         .select('id')
         .eq('id', user.id)
@@ -120,7 +122,7 @@ export async function POST(req: Request) {
     }
 
     const insertPayload = {
-      title,
+      name: title,
       description: description || null,
       owner_id: user.id,
     };
