@@ -1,6 +1,6 @@
 import { createSupabaseClient } from '@/supabase-clients/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 type PatchPayload = {
   title?: string;
@@ -9,12 +9,14 @@ type PatchPayload = {
   metadata?: any;
 };
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, context: any) {
   try {
-    const id = params.id;
+    // `context.params` can be a plain object or a Promise (depending on Next version/runtime).
+    let params = context?.params;
+    if (params && typeof params.then === 'function') {
+      params = await params;
+    }
+    const id = String(params?.id);
     const body = await req.json();
     const payload: PatchPayload = {};
     if (body.title !== undefined) payload.title = String(body.title);
@@ -105,12 +107,13 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: NextRequest, context: any) {
   try {
-    const id = params.id;
+    let params = context?.params;
+    if (params && typeof params.then === 'function') {
+      params = await params;
+    }
+    const id = String(params?.id);
     const supabase = await createSupabaseClient();
 
     const {
