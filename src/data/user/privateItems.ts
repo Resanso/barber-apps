@@ -4,7 +4,6 @@ import { createSupabaseClient } from '@/supabase-clients/server';
 import { runEffectInAction } from '@/utils/effect-bridge';
 import { insertPrivateItemEffect } from '@/utils/effect-supabase-queries';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 const insertPrivateItemSchema = z.object({
@@ -46,7 +45,9 @@ export const deletePrivateItemAction = authActionClient
     if (error) {
       throw new Error(error.message);
     }
+    // Revalidate relevant paths and return success.
+    // Do not perform a server-side redirect here — let the client handle navigation
+    // so `useAction` can resolve normally and client callbacks run as expected.
     revalidatePath('/');
-    redirect('/private-items');
     return { success: true };
   });

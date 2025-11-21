@@ -1,5 +1,5 @@
 import { createSupabaseClient } from '@/supabase-clients/server';
-import { createClient as createBrowserClient } from '@supabase/supabase-js';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       let upsertResult: any = null;
       if (serviceRoleKey) {
-        const serviceClient = createBrowserClient(
+        const serviceClient = createServiceClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL || '',
           serviceRoleKey,
           {

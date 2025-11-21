@@ -40,6 +40,7 @@ export async function updateSession(request: NextRequest) {
     '/private-items',
     '/items',
     '/item',
+    '/dashboard/barber',
   ];
 
   const {

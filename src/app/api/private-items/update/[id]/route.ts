@@ -125,6 +125,10 @@ export async function DELETE(req: NextRequest, context: any) {
     if (!user)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // Debug: log incoming id and user
+    console.debug('private-items.delete: incoming id', id);
+    console.debug('private-items.delete: current user id', user?.id);
+
     // Lookup role
     const { data: profile, error: profileErr } = await (supabase as any)
       .from('profiles')
@@ -133,57 +137,118 @@ export async function DELETE(req: NextRequest, context: any) {
       .single();
 
     const role = profileErr ? null : profile?.role ?? null;
+    console.debug('private-items.delete: resolved role', role);
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // Only users with the 'barber' role are allowed to delete private items.
+    // Debug: log obfuscated service key prefix (do NOT log full key)
+    try {
+      if (serviceKey) {
+        const prefix = String(serviceKey).slice(0, 12);
+        console.debug(
+          'private-items.delete: SUPABASE_SERVICE_ROLE_KEY prefix',
+          prefix + '...'
+        );
+      } else {
+        console.debug(
+          'private-items.delete: SUPABASE_SERVICE_ROLE_KEY not set'
+        );
+      }
+    } catch (e) {
+      console.debug(
+        'private-items.delete: error reading service key prefix',
+        e
+      );
+    }
+
+    // Fetch the existing item for debugging (owner_id etc.)
+    let existingItem = null;
+    let existingErr = null;
+    try {
+      const lookup = await (supabase as any)
+        .from('private_items')
+        .select('id,owner_id')
+        .eq('id', id)
+        .single();
+      existingItem = lookup.data ?? null;
+      existingErr = lookup.error ?? null;
+      if (existingErr) {
+        console.debug(
+          'private-items.delete: existing item lookup error',
+          existingErr
+        );
+      } else {
+        console.debug('private-items.delete: existing item', existingItem);
+      }
+    } catch (e) {
+      existingErr = e;
+      console.debug('private-items.delete: existing item lookup threw', e);
+    }
+
+    // If the item can't be found or lookup failed, return debug info for now
+    if (existingErr || !existingItem) {
+      console.warn('private-items.delete: item not found or lookup failed', {
+        id,
+        existingErr,
+      });
+      return NextResponse.json(
+        {
+          error: 'Not found',
+          debug: {
+            id,
+            userId: user?.id ?? null,
+            role: role ?? null,
+            existingErr: existingErr
+              ? String((existingErr as any).message ?? existingErr)
+              : null,
+            existingItem: existingItem ?? null,
+          },
+        },
+        { status: 404 }
+      );
+    }
+
+    // Only users with the 'barber' role are allowed to perform deletes.
     if (role !== 'barber') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // If a service role key is available, use the service client to bypass RLS
-    // and perform the delete on behalf of the barber.
-    if (serviceKey) {
-      const svc = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-        serviceKey,
-        {
-          auth: { persistSession: false },
-        }
-      );
-
-      const { error } = await (svc as any)
+    // Perform deletion using the session-bound Supabase client (no service role key).
+    // NOTE: For this to succeed, your DB RLS policies must allow authenticated
+    // users with the barber role to delete rows (see recommended SQL below).
+    try {
+      const { data, error } = await (supabase as any)
         .from('private_items')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
+
       if (error) {
-        console.error('private-items.delete: service delete error', error);
+        console.error('private-items.delete: session delete error', error);
         return NextResponse.json(
           { error: 'Delete failed', details: error },
           { status: 500 }
         );
       }
 
-      return NextResponse.json({ message: 'Deleted' }, { status: 200 });
-    }
+      if (!data || (Array.isArray(data) && data.length === 0)) {
+        console.warn(
+          'private-items.delete: session delete returned no rows for id',
+          id
+        );
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      }
 
-    // No service key available: attempt to delete using the session-bound server
-    // client. This will succeed only if RLS policies allow barbers to delete
-    // their target rows. We still enforce the role check above so non-barbers
-    // cannot delete even their own items.
-    const { error } = await (supabase as any)
-      .from('private_items')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('private-items.delete: delete error', error);
       return NextResponse.json(
-        { error: 'Delete failed', details: error },
+        { message: 'Deleted', deleted: data },
+        { status: 200 }
+      );
+    } catch (err) {
+      console.error('private-items.delete: unexpected delete error', err);
+      return NextResponse.json(
+        { error: 'Delete failed', details: err },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({ message: 'Deleted' }, { status: 200 });
   } catch (err) {
     console.error('private-items.delete: unexpected error', err);
     return NextResponse.json({ error: 'Unexpected error' }, { status: 500 });

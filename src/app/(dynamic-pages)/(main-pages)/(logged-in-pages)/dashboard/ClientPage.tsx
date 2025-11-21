@@ -65,9 +65,9 @@ export const CreatePrivateItemForm: React.FC = () => {
       toast.success('Item created', { id: toastRef.current });
       toastRef.current = undefined;
       router.refresh();
-      if (data) {
-        router.push(`/private-item/${data}`);
-      }
+      // Do not navigate to a separate private-item page; keep user on the
+      // current dashboard and refresh the list. The item details are shown
+      // via the inline modal when the user clicks View.
     },
     onError: ({ error }) => {
       const errorMessage = error.serverError ?? 'Failed to create item';

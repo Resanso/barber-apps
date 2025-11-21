@@ -38,19 +38,30 @@ export const ConfirmDeleteItemDialog = ({ itemId }: Props): JSX.Element => {
       toast.success('Item deleted', { id: toastRef.current });
       toastRef.current = undefined;
       router.refresh();
-      router.push('/private-items');
+      router.push('/dashboard/barber');
       setOpen(false);
     },
     onError: ({ error }) => {
-      const errorMessage = error.serverError ?? 'Failed to delete item';
+      // Prefer the concrete error message when available so users see why it failed
+      const fallbackMessage =
+        error && typeof error === 'object' && 'message' in error
+          ? (error as { message?: string }).message
+          : undefined;
+      const errorMessage =
+        error?.serverError ?? fallbackMessage ?? 'Failed to delete item';
+      // Log the full error server-side for easier debugging in dev
+      // eslint-disable-next-line no-console
+      console.error('deletePrivateItemAction error:', error);
       toast.error(errorMessage, { id: toastRef.current });
       toastRef.current = undefined;
     },
   });
 
-  const handleDelete = () => {
-    execute({ id: itemId });
-  };
+  const handleDelete = async () => {
+    const res = await fetch(`/api/private-items/update/${itemId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Delete failed');
+    // handle success (toast, router.push, etc.)
+  }
 
   return (
     <>

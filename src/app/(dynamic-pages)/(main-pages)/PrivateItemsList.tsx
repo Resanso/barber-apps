@@ -1,7 +1,11 @@
+"use client";
+
+import { ConfirmDeleteItemDialog } from '@/app/(dynamic-pages)/(main-pages)/(logged-in-pages)/private-item/[privateItemId]/ConfirmDeleteItemDialog';
 import { T } from '@/components/ui/Typography';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
   Empty,
   EmptyContent,
@@ -27,16 +31,21 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 
 interface PrivateItemsListProps {
   privateItems: TableType<'private_items'>[];
   showActions?: boolean;
+  isBarber?: boolean;
 }
 
 export const PrivateItemsList = ({
   privateItems,
   showActions = true,
+  isBarber = false,
 }: PrivateItemsListProps) => {
+  const [selected, setSelected] = useState<TableType<'private_items'> | null>(null);
+
   return (
     <div className="space-y-8">
       {showActions && (
@@ -90,15 +99,45 @@ export const PrivateItemsList = ({
                       : item.description}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Link href={`/private-item/${item.id}`}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" /> View
-                      </Button>
-                    </Link>
+                    {isBarber && (
+                      <Dialog onOpenChange={(open) => (open ? setSelected(item) : setSelected(null))}>
+                        <DialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" /> View
+                          </Button>
+                        </DialogTrigger>
+
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>{item.name}</DialogTitle>
+                            <DialogDescription>
+                              {item.created_at && (
+                                <div className="flex items-center gap-1 mt-1 text-muted-foreground text-xs">
+                                  <Clock className="h-3 w-3" />
+                                  <span>
+                                    {new Date(item.created_at).toLocaleString()}
+                                  </span>
+                                </div>
+                              )}
+                            </DialogDescription>
+                          </DialogHeader>
+
+                          <div className="py-2">
+                            <p className="text-sm text-muted-foreground">
+                              {item.description}
+                            </p>
+                          </div>
+
+                          <DialogFooter>
+                            <ConfirmDeleteItemDialog itemId={String(item.id)} />
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

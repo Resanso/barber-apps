@@ -1,19 +1,20 @@
-import { PrivateItemsList } from '@/app/(dynamic-pages)/(main-pages)/PrivateItemsList';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { T } from '@/components/ui/Typography';
 import { getUserPrivateItems } from '@/data/anon/privateItems';
 import { createSupabaseClient } from '@/supabase-clients/server';
-import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import BarberPrivateItemsRealtime from './BarberPrivateItemsRealtime';
 import CreatePrivateItemForm from './CreatePrivateItemForm';
 
 
 async function UserPrivateItemsListContainer() {
   const privateItems = await getUserPrivateItems();
-  return <PrivateItemsList privateItems={privateItems} showActions={false} />;
+  // Render the client realtime wrapper and pass the server snapshot as initial items.
+  return (
+    <BarberPrivateItemsRealtime initialItems={privateItems} showActions={false} />
+  );
 }
 
 function ListSkeleton() {
@@ -71,9 +72,6 @@ async function Heading() {
     <>
       <T.H1>{headingText}</T.H1>
       <Link href="/dashboard/new">
-        <Button className="flex items-center gap-2">
-          <PlusCircle className="h-4 w-4" /> New Private Item
-        </Button>
       </Link>
     </>
   );
