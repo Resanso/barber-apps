@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { T } from '@/components/ui/Typography';
 import { getUserPrivateItems } from '@/data/anon/privateItems';
+import { createSupabaseClient } from '@/supabase-clients/server';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -44,10 +45,31 @@ function ListSkeleton() {
 }
 
 async function Heading() {
-  'use cache';
+  // Server-side: determine user's role and adjust heading accordingly.
+  const supabase = await createSupabaseClient();
+  let headingText = 'Dashboard';
+
+  try {
+    const { data: userData } = await (supabase.auth as any).getUser();
+    const user = userData?.user ?? null;
+    if (user?.id) {
+      const { data: profile, error: profileErr } = await (supabase as any)
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      if (!profileErr && profile && profile.role === 'barber') {
+        headingText = 'Barbers';
+      }
+    }
+  } catch (e) {
+    // If any error occurs, fall back to default heading.
+    console.warn('dashboard: failed to resolve profile role', e);
+  }
+
   return (
     <>
-      <T.H1>Dashboard</T.H1>
+      <T.H1>{headingText}</T.H1>
       <Link href="/dashboard/new">
         <Button className="flex items-center gap-2">
           <PlusCircle className="h-4 w-4" /> New Private Item
@@ -55,7 +77,7 @@ async function Heading() {
       </Link>
     </>
   );
-};
+}
 
 export default function DashboardPage() {
   return (

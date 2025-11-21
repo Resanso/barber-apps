@@ -37,6 +37,11 @@ export async function POST(req: Request) {
           (user.raw_user_meta_data &&
             (user.raw_user_meta_data as any).full_name) ||
           null,
+        email:
+          user.email ||
+          (user.user_metadata && (user.user_metadata as any).email) ||
+          (user.raw_user_meta_data && (user.raw_user_meta_data as any).email) ||
+          '',
         avatar_url:
           (user.user_metadata && (user.user_metadata as any).avatar_url) ||
           (user.raw_user_meta_data &&
@@ -62,11 +67,35 @@ export async function POST(req: Request) {
           .upsert(profilePayload, { onConflict: 'id' })
           .select()
           .single();
-        console.log(
-          'private-items: used service role to upsert profile',
-          !!upsertResult?.data,
-          upsertResult?.error || 'no-error'
-        );
+
+        // If the service role key is invalid, Supabase will return an auth error.
+        // Detect that case and fall back to the server client upsert so we can
+        // proceed when possible and provide a clearer log message to the user.
+        if (upsertResult?.error) {
+          console.warn(
+            'private-items: service role upsert returned error, falling back to server client',
+            upsertResult.error
+          );
+
+          // Try fallback to server client (may still fail under RLS)
+          upsertResult = await (supabase as any)
+            .from('profiles')
+            .upsert(profilePayload, { onConflict: 'id' })
+            .select()
+            .single();
+
+          console.log(
+            'private-items: fallback server client upsert result',
+            !!upsertResult?.data,
+            upsertResult?.error || 'no-error'
+          );
+        } else {
+          console.log(
+            'private-items: used service role to upsert profile',
+            !!upsertResult?.data,
+            upsertResult?.error || 'no-error'
+          );
+        }
       } else {
         // Fallback: try to upsert using the current server client (may fail due to RLS)
         upsertResult = await (supabase as any)
@@ -122,16 +151,24 @@ export async function POST(req: Request) {
     }
 
     const insertPayload = {
+      // Provide both `title` and `name` for compatibility with different
+      // migration states. Some deployments use `title` while others use
+      // `name` as the column — include both so the insert satisfies the
+      // NOT NULL constraint whichever schema is active.
+      title: title,
       name: title,
       description: description || null,
       owner_id: user.id,
     };
 
-    const { data, error } = await supabase
+    // Insert without asking PostgREST to return the inserted row. Returning
+    // rows requires the schema cache to include the column names; in some
+    // Supabase cloud states the schema cache may be stale and cause errors
+    // like "Could not find the 'name' column...". To avoid that, perform
+    // the insert and return a minimal success response.
+    const { error } = await supabase
       .from('private_items')
-      .insert(insertPayload)
-      .select()
-      .single();
+      .insert(insertPayload);
 
     if (error) {
       console.error('private-items: insert error', error);
@@ -141,7 +178,7 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    return NextResponse.json({ message: 'Created' }, { status: 201 });
   } catch (err) {
     console.error('private-items: unexpected error', err);
     return NextResponse.json({ error: 'Unexpected error' }, { status: 500 });

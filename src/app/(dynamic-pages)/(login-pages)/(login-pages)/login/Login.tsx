@@ -33,12 +33,29 @@ export function Login({
 
   const router = useRouter();
 
-  function redirectToDashboard() {
+  async function redirectToDashboard() {
     if (next) {
       router.push(`/auth/callback?next=${next}`);
-    } else {
-      router.push('/dashboard');
+      return;
     }
+
+    // After a successful password sign-in we expect a session cookie to be
+    // present. Ask the server what the current user's role is and redirect
+    // barbers to a dedicated dashboard.
+    try {
+      const res = await fetch('/api/auth/role', { method: 'GET', credentials: 'same-origin' });
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload?.role === 'barber') {
+          router.push('/dashboard/barber');
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('redirectToDashboard: role check failed', e);
+    }
+
+    router.push('/dashboard');
   }
 
   const [magicLinkStatus, setMagicLinkStatus] = useState<'idle' | 'sending'>('idle');
