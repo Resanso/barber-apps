@@ -51,8 +51,8 @@ export const CreatePrivateItemForm: React.FC = () => {
     resolver: zodResolver(formSchema),
     mode: 'onChange',
     defaultValues: {
-      name: '',
-      description: '',
+      full_name: '',
+      service_time: '',
     },
   });
 

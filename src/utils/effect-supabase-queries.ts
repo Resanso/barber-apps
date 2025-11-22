@@ -120,7 +120,9 @@ export function insertPrivateItemEffect(
     try: async () => {
       const { data, error } = await supabase
         .from('private_items')
-        .insert(item)
+        // item shape has been updated (full_name/service_time/etc.).
+        // Supabase client typings still expect the old table shape, so cast to `any` here.
+        .insert(item as any)
         .select('*')
         .single();
 
