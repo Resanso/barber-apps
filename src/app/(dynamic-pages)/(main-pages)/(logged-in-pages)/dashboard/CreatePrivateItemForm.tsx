@@ -1,22 +1,21 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function CreatePrivateItemForm() {
     const router = useRouter();
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
+    const [fullName, setFullName] = useState("");
+    const [serviceTime, setServiceTime] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError(null);
-        if (!title.trim()) {
-            setError("Title is required");
+        if (!fullName.trim()) {
+            setError("Full name is required");
             return;
         }
 
@@ -26,7 +25,7 @@ export default function CreatePrivateItemForm() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: 'same-origin',
-                body: JSON.stringify({ title: title.trim(), description: description.trim() }),
+                body: JSON.stringify({ full_name: fullName.trim(), service_time: serviceTime || null }),
             });
 
             if (!res.ok) {
@@ -36,8 +35,8 @@ export default function CreatePrivateItemForm() {
                 return;
             }
 
-            setTitle("");
-            setDescription("");
+            setFullName("");
+            setServiceTime("");
             // Refresh the server-rendered data on the dashboard
             router.refresh();
         } catch (err) {
@@ -51,18 +50,19 @@ export default function CreatePrivateItemForm() {
         <form onSubmit={handleSubmit} className="space-y-3 mb-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Input
-                    placeholder="Title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                     className="md:col-span-1"
-                    aria-label="Title"
+                    aria-label="Full name"
                 />
-                <Textarea
-                    placeholder="Description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                <Input
+                    type="datetime-local"
+                    placeholder="Service time"
+                    value={serviceTime}
+                    onChange={(e) => setServiceTime(e.target.value)}
                     className="md:col-span-2"
-                    aria-label="Description"
+                    aria-label="Service time"
                 />
             </div>
 

@@ -7,8 +7,10 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 const insertPrivateItemSchema = z.object({
-  name: z.string(),
-  description: z.string(),
+  full_name: z.string().optional(),
+  service_time: z.string().optional(),
+  phone: z.string().optional(),
+  service: z.string().optional(),
 });
 
 export const insertPrivateItemAction = authActionClient
@@ -20,7 +22,10 @@ export const insertPrivateItemAction = authActionClient
     // Explicitly set owner_id from authenticated user context
     const data = await runEffectInAction(
       insertPrivateItemEffect(supabaseClient, {
-        ...parsedInput,
+        full_name: (parsedInput as any).full_name ?? null,
+        service_time: (parsedInput as any).service_time ?? null,
+        phone: (parsedInput as any).phone ?? null,
+        service: (parsedInput as any).service ?? null,
         owner_id: ctx.userId,
       })
     );

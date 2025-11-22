@@ -74,73 +74,108 @@ export const PrivateItemsList = ({
               <TableRow>
                 <TableHead className="w-[300px]">Name</TableHead>
                 <TableHead className="hidden md:table-cell">
-                  Description
+                  Time
                 </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {privateItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {item.name}
-                    {item.created_at && (
-                      <div className="flex items-center gap-1 mt-1 text-muted-foreground text-xs">
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {item.description.length > 100
-                      ? `${item.description.slice(0, 100)}...`
-                      : item.description}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {isBarber && (
-                      <Dialog onOpenChange={(open) => (open ? setSelected(item) : setSelected(null))}>
-                        <DialogTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex items-center gap-1"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" /> View
-                          </Button>
-                        </DialogTrigger>
+              {privateItems.map((item) => {
+                const it: any = item as any;
+                const displayName = it.full_name ?? item.name ?? '—';
+                const createdAt = item.created_at;
 
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>{item.name}</DialogTitle>
-                            <DialogDescription>
-                              {item.created_at && (
-                                <div className="flex items-center gap-1 mt-1 text-muted-foreground text-xs">
-                                  <Clock className="h-3 w-3" />
-                                  <span>
-                                    {new Date(item.created_at).toLocaleString()}
-                                  </span>
+                const summary = it.service_time
+                  ? <span>{new Date(String(it.service_time)).toLocaleString()}</span>
+                  : it.service
+                    ? <span>{it.service}</span>
+                    : (typeof item.description === 'string' && item.description.length > 0
+                      ? (item.description.length > 100 ? `${item.description.slice(0, 100)}...` : item.description)
+                      : <span className="text-muted-foreground">—</span>);
+
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      {displayName}
+                      {createdAt && (
+                        <div className="flex items-center gap-1 mt-1 text-muted-foreground text-xs">
+                          <Clock className="h-3 w-3" />
+                          <span>
+                            {new Date(createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {summary}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {isBarber && (
+                        <Dialog onOpenChange={(open) => (open ? setSelected(item) : setSelected(null))}>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex items-center gap-1"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" /> View
+                            </Button>
+                          </DialogTrigger>
+
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>{displayName}</DialogTitle>
+                              <DialogDescription>
+                                {createdAt && (
+                                  <div className="flex items-center gap-1 mt-1 text-muted-foreground text-xs">
+                                    <Clock className="h-3 w-3" />
+                                    <span>
+                                      {new Date(createdAt).toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="py-2 space-y-2">
+                              {it.full_name && (
+                                <div className="text-sm">
+                                  <strong>Full name:</strong> {it.full_name}
                                 </div>
                               )}
-                            </DialogDescription>
-                          </DialogHeader>
+                              {it.phone && (
+                                <div className="text-sm">
+                                  <strong>Phone:</strong> {it.phone}
+                                </div>
+                              )}
+                              {it.service && (
+                                <div className="text-sm">
+                                  <strong>Service:</strong> {it.service}
+                                </div>
+                              )}
+                              {it.service_time && (
+                                <div className="text-sm">
+                                  <strong>Service time:</strong>{' '}
+                                  {new Date(String(it.service_time)).toLocaleString()}
+                                </div>
+                              )}
+                              {typeof item.description === 'string' && item.description && (
+                                <p className="text-sm text-muted-foreground">
+                                  {item.description}
+                                </p>
+                              )}
+                            </div>
 
-                          <div className="py-2">
-                            <p className="text-sm text-muted-foreground">
-                              {item.description}
-                            </p>
-                          </div>
-
-                          <DialogFooter>
-                            <ConfirmDeleteItemDialog itemId={String(item.id)} />
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+                            <DialogFooter>
+                              <ConfirmDeleteItemDialog itemId={String(item.id)} />
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </Card>

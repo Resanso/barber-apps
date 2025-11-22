@@ -28,13 +28,12 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { Textarea } from '@/components/ui/textarea';
 import { insertPrivateItemAction } from '@/data/user/privateItems';
 import { Shield } from 'lucide-react';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().min(1, 'Description is required'),
+  full_name: z.string().min(1, 'Full name is required'),
+  service_time: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -104,12 +103,12 @@ export const CreatePrivateItemForm: React.FC = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="name"
+                name="full_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter item name" {...field} />
+                      <Input placeholder="Enter full name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -117,16 +116,12 @@ export const CreatePrivateItemForm: React.FC = () => {
               />
               <FormField
                 control={form.control}
-                name="description"
+                name="service_time"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Service Time</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Enter item description"
-                        rows={4}
-                        {...field}
-                      />
+                      <Input type="datetime-local" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

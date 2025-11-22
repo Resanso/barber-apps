@@ -6,14 +6,39 @@ import { createSupabaseClient } from '@/supabase-clients/server';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import BarberPrivateItemsRealtime from './BarberPrivateItemsRealtime';
-import CreatePrivateItemForm from './CreatePrivateItemForm';
+import BookingForm from './booking-form';
 
 
 async function UserPrivateItemsListContainer() {
   const privateItems = await getUserPrivateItems();
+  // Server-side: determine if current user is a barber so client component
+  // can show barber-only actions (View/Delete).
+  let isBarber = false;
+  try {
+    const supabase = await createSupabaseClient();
+    const { data: userData } = await (supabase.auth as any).getUser();
+    const user = userData?.user ?? null;
+    if (user?.id) {
+      const { data: profile, error: profileErr } = await (supabase as any)
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      if (!profileErr && profile && profile.role === 'barber') {
+        isBarber = true;
+      }
+    }
+  } catch (e) {
+    console.warn('dashboard: failed to resolve profile role for list', e);
+  }
+
   // Render the client realtime wrapper and pass the server snapshot as initial items.
   return (
-    <BarberPrivateItemsRealtime initialItems={privateItems} showActions={false} />
+    <BarberPrivateItemsRealtime
+      initialItems={privateItems}
+      showActions={false}
+      isBarber={isBarber}
+    />
   );
 }
 
@@ -81,8 +106,8 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
       <Heading />
-      {/* Create form placed under heading */}
-      <CreatePrivateItemForm />
+      {/* Booking button placed under heading */}
+      <BookingForm />
       <Suspense fallback={<ListSkeleton />}>
         <UserPrivateItemsListContainer />
       </Suspense>

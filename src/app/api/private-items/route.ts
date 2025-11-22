@@ -5,12 +5,30 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const title = (body.title || '').toString().trim();
-    const description = (body.description || '').toString().trim();
-
-    if (!title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
-    }
+    const phone =
+      body.phone !== undefined
+        ? body.phone === null
+          ? null
+          : String(body.phone).trim()
+        : undefined;
+    const full_name =
+      body.full_name !== undefined
+        ? body.full_name === null
+          ? null
+          : String(body.full_name).trim()
+        : undefined;
+    const service =
+      body.service !== undefined
+        ? body.service === null
+          ? null
+          : String(body.service).trim()
+        : undefined;
+    const service_time =
+      body.service_time !== undefined
+        ? body.service_time === null
+          ? null
+          : String(body.service_time)
+        : undefined;
 
     const supabase = await createSupabaseClient();
 
@@ -150,16 +168,15 @@ export async function POST(req: Request) {
       console.warn('private-items: ensure profile error', profileErr);
     }
 
-    const insertPayload = {
-      // Provide both `title` and `name` for compatibility with different
-      // migration states. Some deployments use `title` while others use
-      // `name` as the column — include both so the insert satisfies the
-      // NOT NULL constraint whichever schema is active.
-      title: title,
-      name: title,
-      description: description || null,
+    const insertPayload: any = {
       owner_id: user.id,
     };
+
+    // Attach new optional fields when provided
+    if (phone !== undefined) insertPayload.phone = phone;
+    if (full_name !== undefined) insertPayload.full_name = full_name;
+    if (service !== undefined) insertPayload.service = service;
+    if (service_time !== undefined) insertPayload.service_time = service_time;
 
     // Insert without asking PostgREST to return the inserted row. Returning
     // rows requires the schema cache to include the column names; in some

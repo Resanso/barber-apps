@@ -3,10 +3,11 @@ import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 type PatchPayload = {
-  title?: string;
-  name?: string;
-  description?: string | null;
   metadata?: any;
+  phone?: string | null;
+  full_name?: string | null;
+  service?: string | null;
+  service_time?: string | null;
 };
 
 export async function PATCH(req: NextRequest, context: any) {
@@ -19,11 +20,13 @@ export async function PATCH(req: NextRequest, context: any) {
     const id = String(params?.id);
     const body = await req.json();
     const payload: PatchPayload = {};
-    if (body.title !== undefined) payload.title = String(body.title);
-    if (body.name !== undefined) payload.name = String(body.name);
-    if (body.description !== undefined)
-      payload.description = body.description ?? null;
     if (body.metadata !== undefined) payload.metadata = body.metadata;
+    if (body.phone !== undefined) payload.phone = body.phone ?? null;
+    if (body.full_name !== undefined)
+      payload.full_name = body.full_name ?? null;
+    if (body.service !== undefined) payload.service = body.service ?? null;
+    if (body.service_time !== undefined)
+      payload.service_time = body.service_time ?? null;
 
     const supabase = await createSupabaseClient();
 
