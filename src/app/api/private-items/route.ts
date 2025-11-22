@@ -201,3 +201,84 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unexpected error' }, { status: 500 });
   }
 }
+
+export async function GET(req: Request) {
+  try {
+    // Prefer using the service-role key so we can bypass RLS and return all
+    // rows regardless of the requesting user's session. If the service role
+    // key isn't available, fall back to the server client which may return
+    // an empty array under RLS.
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    let data: any = null;
+    let error: any = null;
+    if (serviceRoleKey) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!supabaseUrl) {
+        console.error('private-items: missing NEXT_PUBLIC_SUPABASE_URL env');
+      } else {
+        try {
+          const serviceClient = createServiceClient(
+            supabaseUrl,
+            serviceRoleKey,
+            { auth: { persistSession: false } }
+          );
+
+          const res = await (serviceClient as any)
+            .from('private_items')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          data = res.data;
+          error = res.error;
+        } catch (e: any) {
+          console.error('private-items: service client GET error', {
+            message: e?.message || String(e),
+            stack: e?.stack || null,
+          });
+          // fall through to try server client below
+        }
+      }
+    }
+
+    if (!data && !error) {
+      try {
+        const supabase = await createSupabaseClient();
+        const res = await (supabase as any)
+          .from('private_items')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        data = res.data;
+        error = res.error;
+      } catch (e: any) {
+        console.error('private-items: server client GET error', {
+          message: e?.message || String(e),
+          stack: e?.stack || null,
+        });
+        return NextResponse.json(
+          {
+            error: 'Database fetch error',
+            details: {
+              message: e?.message || String(e),
+              hint: 'Server failed to reach Supabase. Check NEXT_PUBLIC_SUPABASE_URL, network connectivity, and that Supabase is reachable from this host.',
+            },
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    if (error) {
+      console.error('private-items: GET fetch error', error);
+      return NextResponse.json(
+        { error: 'Database fetch error', details: error },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ data }, { status: 200 });
+  } catch (err) {
+    console.error('private-items: unexpected GET error', err);
+    return NextResponse.json({ error: 'Unexpected error' }, { status: 500 });
+  }
+}

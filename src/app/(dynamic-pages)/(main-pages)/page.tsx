@@ -28,6 +28,7 @@ export default function LandingPage() {
               <Link href="#services" className="text-sm font-medium hover:text-amber-700 transition-colors">Services</Link>
               <Link href="#about" className="text-sm font-medium hover:text-amber-700 transition-colors">About</Link>
               <Link href="#location" className="text-sm font-medium hover:text-amber-700 transition-colors">Location</Link>
+              <Link href="/waitlist" className="text-sm font-medium hover:text-amber-700 transition-colors">Waitlist</Link>
             </div>
 
             <div className="flex items-center gap-4">

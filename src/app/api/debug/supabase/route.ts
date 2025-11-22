@@ -1,45 +1,47 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishable = !!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+function maskKey(k: string | null | undefined) {
+  if (!k) return null;
+  if (k.length <= 8) return '*****';
+  return k.slice(0, 4) + '...' + k.slice(-4);
+}
 
-  if (!url) {
+export async function GET() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || null;
+  const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || null;
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY || null;
+
+  const result: any = {
+    supabaseUrl,
+    publishablePresent: !!publishable,
+    publishableMasked: maskKey(publishable),
+    serviceRolePresent: !!serviceRole,
+    serviceRoleMasked: maskKey(serviceRole),
+    fetchOk: null,
+    fetchError: null,
+  };
+
+  if (!supabaseUrl) {
     return NextResponse.json(
-      {
-        ok: false,
-        reason: 'Missing NEXT_PUBLIC_SUPABASE_URL',
-        env: {
-          NEXT_PUBLIC_SUPABASE_URL: false,
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishable,
-        },
-      },
+      { ok: false, reason: 'NEXT_PUBLIC_SUPABASE_URL not set' },
       { status: 500 }
     );
   }
 
   try {
-    const res = await fetch(url, { method: 'GET' });
-    return NextResponse.json({
-      ok: true,
-      status: res.status,
-      env: {
-        NEXT_PUBLIC_SUPABASE_URL: true,
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishable,
-      },
-    });
+    // perform a simple HEAD request to test basic connectivity
+    const res = await fetch(supabaseUrl, { method: 'HEAD' });
+    result.fetchOk = res.ok;
+    result.fetchStatus = res.status;
   } catch (err: any) {
-    console.error('Debug fetch error:', err);
-    return NextResponse.json(
-      {
-        ok: false,
-        error: String(err),
-        env: {
-          NEXT_PUBLIC_SUPABASE_URL: true,
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishable,
-        },
-      },
-      { status: 500 }
-    );
+    result.fetchOk = false;
+    result.fetchError = {
+      message: err?.message || String(err),
+      stack: err?.stack || null,
+    };
   }
+
+  return NextResponse.json({ ok: true, result }, { status: 200 });
 }
+// Note: only a single GET export is allowed per route file. The handler above
+// performs an env check and a simple HEAD request to the Supabase URL.

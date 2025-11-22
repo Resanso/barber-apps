@@ -39,6 +39,12 @@ export const ExternalNavigation = () => {
             About
           </Link>
           <Link
+            className="text-sm hidden lg:inline-flex font-medium text-muted-foreground hover:text-foreground transition-colors"
+            href="/waitlist"
+          >
+            Waitlist
+          </Link>
+          <Link
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             href="/login"
           >
