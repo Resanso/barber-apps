@@ -190,6 +190,7 @@ export default function WaitlistRealtime({ initialItems = [] }: WaitlistRealtime
                 <tr className="bg-gray-50/50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   <th className="px-6 py-4">Customer</th>
                   <th className="px-6 py-4">Service</th>
+                  <th className="px-6 py-4">Barber</th>
                   <th className="px-6 py-4">Schedule</th>
                   <th className="px-6 py-4">Created At</th>
                 </tr>
@@ -199,6 +200,7 @@ export default function WaitlistRealtime({ initialItems = [] }: WaitlistRealtime
                   const name = it.full_name ?? it.name ?? '—';
                   const phone = it.phone ?? '—';
                   const service = it.service ?? '—';
+                  const barber = it.barber ?? '—';
                   const serviceTime = it.service_time ?? it.time;
                   const created = it.created_at;
                   const rowKey = it.id ?? `row-${idx}-${it.created_at ?? ''}`;
@@ -229,6 +231,11 @@ export default function WaitlistRealtime({ initialItems = [] }: WaitlistRealtime
                             {service}
                           </span>
                         </div>
+                      </td>
+
+                      {/* Barber Column */}
+                      <td className="px-6 py-4 align-top">
+                        <div className="text-sm text-gray-700">{barber}</div>
                       </td>
 
                       {/* Schedule Column */}
