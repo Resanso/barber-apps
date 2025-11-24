@@ -24,6 +24,7 @@ export default function BookingForm() {
     const [phone, setPhone] = useState<string | null>(null);
     const [selectedServices, setSelectedServices] = useState<string[]>([]);
     const [serviceTime, setServiceTime] = useState<string | null>(null);
+    const [selectedBarber, setSelectedBarber] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +35,13 @@ export default function BookingForm() {
         notes?: string;
     }>);
 
+    // sample barbers list (replace or load dynamically as needed)
+    const barbers: Array<{ id: string; name: string }> = [
+        { id: 'asep', name: 'Asep' },
+        { id: 'agus', name: 'Agus' },
+        { id: 'tba', name: 'TBA' },
+    ];
+
     function nextStep() {
         setError(null);
         if (step === 0) {
@@ -42,7 +50,7 @@ export default function BookingForm() {
                 return;
             }
         }
-        setStep((s) => Math.min(2, s + 1));
+        setStep((s) => Math.min(3, s + 1));
     }
 
     function prevStep() {
@@ -55,6 +63,7 @@ export default function BookingForm() {
         setPhone(null);
         setSelectedServices([]);
         setServiceTime(null);
+        setSelectedBarber(null);
         setStep(0);
         setError(null);
     }
@@ -87,6 +96,7 @@ export default function BookingForm() {
             if (phone !== null) payload.phone = phone;
             if (fullName) payload.full_name = fullName;
             if (selectedServices.length > 0) payload.service = selectedServices.join(', ');
+            if (selectedBarber) payload.barber = selectedBarber;
             if (service_time_payload !== null) payload.service_time = service_time_payload;
 
             const res = await fetch('/api/private-items', {
@@ -132,6 +142,8 @@ export default function BookingForm() {
                         <div className={"px-4 py-2 rounded-full " + (step === 1 ? 'bg-emerald-800 text-white' : 'bg-transparent text-muted-foreground')}>Service</div>
                         <div className="text-xl text-muted-foreground">&gt;</div>
                         <div className={"px-4 py-2 rounded-full " + (step === 2 ? 'bg-emerald-800 text-white' : 'bg-transparent text-muted-foreground')}>Time</div>
+                        <div className="text-xl text-muted-foreground">&gt;</div>
+                        <div className={"px-4 py-2 rounded-full " + (step === 3 ? 'bg-emerald-800 text-white' : 'bg-transparent text-muted-foreground')}>Barber</div>
                     </DialogDescription>
                 </DialogHeader>
 
@@ -201,6 +213,23 @@ export default function BookingForm() {
                         </div>
                     )}
 
+                    {step === 3 && (
+                        <div className="grid grid-cols-1 gap-2">
+                            <label className="text-sm text-muted-foreground">Choose barber</label>
+                            <select
+                                value={selectedBarber ?? ''}
+                                onChange={(e) => setSelectedBarber(e.target.value || null)}
+                                aria-label="barbers"
+                                className="input"
+                            >
+                                <option value="">-- Select a barber --</option>
+                                {barbers.map((b) => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <DialogFooter>
                         {error && <div className="text-sm text-red-600">{error}</div>}
                         <div className="flex items-center gap-2 w-full justify-between">
@@ -215,7 +244,7 @@ export default function BookingForm() {
                                     <Button variant="outline" onClick={(e) => { e.preventDefault(); prevStep(); }} type="button">Back</Button>
                                 )}
 
-                                {step < 2 ? (
+                                {step < 3 ? (
                                     <Button onClick={(e) => { e.preventDefault(); nextStep(); }} type="button">Next</Button>
                                 ) : (
                                     <Button type="submit" disabled={loading}>

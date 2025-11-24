@@ -153,6 +153,11 @@ export const PrivateItemsList = ({
                                   <strong>Service:</strong> {it.service}
                                 </div>
                               )}
+                              {it.barber && (
+                                <div className="text-sm">
+                                  <strong>Barber:</strong> {it.barber}
+                                </div>
+                              )}
                               {it.service_time && (
                                 <div className="text-sm">
                                   <strong>Service time:</strong>{' '}

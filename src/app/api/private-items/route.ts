@@ -29,6 +29,12 @@ export async function POST(req: Request) {
           ? null
           : String(body.service_time)
         : undefined;
+    const barber =
+      body.barber !== undefined
+        ? body.barber === null
+          ? null
+          : String(body.barber).trim()
+        : undefined;
 
     const supabase = await createSupabaseClient();
 
@@ -176,6 +182,7 @@ export async function POST(req: Request) {
     if (phone !== undefined) insertPayload.phone = phone;
     if (full_name !== undefined) insertPayload.full_name = full_name;
     if (service !== undefined) insertPayload.service = service;
+    if (barber !== undefined) insertPayload.barber = barber;
     if (service_time !== undefined) insertPayload.service_time = service_time;
 
     // Insert without asking PostgREST to return the inserted row. Returning
