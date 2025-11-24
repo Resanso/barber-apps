@@ -200,6 +200,31 @@ export async function POST(req: Request) {
     // default status for new items
     insertPayload.status = 'at queue';
 
+    // If the submitter is NOT a barber (customer/non-barber), auto-fill eta_start
+    // to the requested service_time when provided.
+    try {
+      if (
+        userRole !== 'barber' &&
+        service_time !== undefined &&
+        service_time !== null
+      ) {
+        insertPayload.eta_start = service_time;
+
+        // Also auto-calc eta_end = eta_start + 30 minutes for non-barber submissions
+        try {
+          const start = new Date(String(service_time));
+          if (!isNaN(start.getTime())) {
+            const end = new Date(start.getTime() + 30 * 60 * 1000);
+            insertPayload.eta_end = end.toISOString();
+          }
+        } catch (e2) {
+          // ignore if parsing fails
+        }
+      }
+    } catch (e) {
+      // ignore and proceed without eta_start/eta_end
+    }
+
     // Insert without asking PostgREST to return the inserted row. Returning
     // rows requires the schema cache to include the column names; in some
     // Supabase cloud states the schema cache may be stale and cause errors

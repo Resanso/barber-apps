@@ -1,3 +1,4 @@
+import MobileMenu from '@/components/nav/MobileMenu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,10 +33,10 @@ export default function LandingPage() {
             </div>
 
             <div className="flex items-center gap-4">
+              <MobileMenu />
               <Button variant="outline" className="hidden sm:flex border border-amber-100" asChild>
                 <Link href="/login">Member Login</Link>
               </Button>
-
             </div>
           </div>
         </div>

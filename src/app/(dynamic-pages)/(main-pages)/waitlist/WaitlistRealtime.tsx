@@ -193,8 +193,8 @@ export default function WaitlistRealtime({ initialItems = [] }: WaitlistRealtime
                   <th className="px-6 py-4">Barber</th>
                   <th className="px-6 py-4">Type</th>
                   <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Schedule</th>
-                  <th className="px-6 py-4">ETA</th>
+                  <th className="px-6 py-4">ETA Start</th>
+                  <th className="px-6 py-4">ETA Done</th>
                   <th className="px-6 py-4">Created At</th>
                 </tr>
               </thead>

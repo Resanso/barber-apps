@@ -29,7 +29,14 @@ async function UserPrivateItemsListContainer() {
       }
     }
   } catch (e) {
-    console.warn('dashboard: failed to resolve profile role for list', e);
+    const msg = (e as any)?.message ?? '';
+    if (typeof msg === 'string' && msg.includes('During prerendering, fetch() rejects when the prerender is complete')) {
+      // ignore during prerender
+    } else if ((e as any)?.__isAuthError || (typeof msg === 'string' && msg.includes('AuthSessionMissingError'))) {
+      // no session during prerender - expected
+    } else {
+      console.warn('dashboard: failed to resolve profile role for list', e);
+    }
   }
 
   // Render the client realtime wrapper and pass the server snapshot as initial items.
@@ -89,8 +96,15 @@ async function Heading() {
       }
     }
   } catch (e) {
-    // If any error occurs, fall back to default heading.
-    console.warn('dashboard: failed to resolve profile role', e);
+    const msg = (e as any)?.message ?? '';
+    if (typeof msg === 'string' && msg.includes('During prerendering, fetch() rejects when the prerender is complete')) {
+      // ignore noisy prerender finalization
+    } else if ((e as any)?.__isAuthError || (typeof msg === 'string' && msg.includes('AuthSessionMissingError'))) {
+      // ignore missing auth session during prerender
+    } else {
+      // If any error occurs, fall back to default heading.
+      console.warn('dashboard: failed to resolve profile role', e);
+    }
   }
 
   return (

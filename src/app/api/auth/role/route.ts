@@ -11,11 +11,19 @@ export async function GET() {
     } = await (supabase.auth as any).getUser();
 
     if (userError) {
-      console.error('api/auth/role: getUser error', userError);
+      const msg = (userError as any)?.message ?? '';
+      const isAuthMissing =
+        (userError as any)?.__isAuthError ||
+        (typeof msg === 'string' && msg.includes('AuthSessionMissingError'));
+      // Don't spam logs during prerender or unauthenticated requests
+      if (!isAuthMissing) {
+        console.error('api/auth/role: getUser error', userError);
+      }
     }
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Treat missing session as unauthenticated but not an error for callers.
+      return NextResponse.json({ role: null }, { status: 200 });
     }
 
     const { data: profile, error: profileErr } = await (supabase as any)

@@ -9,6 +9,18 @@ export const getUserPrivateItems = async (): Promise<
     const { data, error } = await supabase.from('private_items').select('*');
 
     if (error) {
+      // Suppress noisy prerender fetch rejections (Next prerender finalization).
+      const message = (error as any)?.message ?? '';
+      if (
+        typeof message === 'string' &&
+        message.includes(
+          'During prerendering, fetch() rejects when the prerender is complete'
+        )
+      ) {
+        // return empty without noisy logging
+        return [];
+      }
+
       // Log full Supabase error on the server for debugging
       console.error(
         'getUserPrivateItems supabase error:',
@@ -20,6 +32,18 @@ export const getUserPrivateItems = async (): Promise<
 
     return data ?? [];
   } catch (err) {
+    // If this is the prerender-complete fetch rejection, swallow it silently
+    const msg = (err as any)?.message ?? '';
+    if (
+      typeof msg === 'string' &&
+      msg.includes(
+        'During prerendering, fetch() rejects when the prerender is complete'
+      )
+    ) {
+      return [];
+    }
+
+    // Otherwise log and return empty list
     console.error('getUserPrivateItems unexpected error:', err);
     return [];
   }

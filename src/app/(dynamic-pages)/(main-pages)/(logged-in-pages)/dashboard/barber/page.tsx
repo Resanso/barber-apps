@@ -12,13 +12,28 @@ export default async function BarberDashboardPage() {
             .from('private_items')
             .select('*')
             .order('created_at', { ascending: false });
+
         if (error) {
-            console.error('barber dashboard: failed to fetch private_items', error);
+            const msg = (error as any)?.message ?? '';
+            if (typeof msg === 'string' && msg.includes('During prerendering, fetch() rejects when the prerender is complete')) {
+                // ignore noisy prerender finalization error
+            } else if ((error as any)?.__isAuthError || (typeof msg === 'string' && msg.includes('AuthSessionMissingError'))) {
+                // ignore missing auth session during prerender
+            } else {
+                console.error('barber dashboard: failed to fetch private_items', error);
+            }
         } else {
             privateItems = data ?? [];
         }
     } catch (e) {
-        console.error('barber dashboard: unexpected error fetching private_items', e);
+        const msg = (e as any)?.message ?? '';
+        if (typeof msg === 'string' && msg.includes('During prerendering, fetch() rejects when the prerender is complete')) {
+            // expected during prerender finalization, ignore
+        } else if ((e as any)?.__isAuthError || (typeof msg === 'string' && msg.includes('AuthSessionMissingError'))) {
+            // no session during prerender or unauthenticated, ignore for server render
+        } else {
+            console.error('barber dashboard: unexpected error fetching private_items', e);
+        }
     }
 
     // determine if current user has role 'barber' so we can show submission UI
@@ -39,7 +54,14 @@ export default async function BarberDashboardPage() {
             }
         }
     } catch (e) {
-        console.error('barber dashboard: error checking user role', e);
+        const msg = (e as any)?.message ?? '';
+        if (typeof msg === 'string' && msg.includes('During prerendering, fetch() rejects when the prerender is complete')) {
+            // ignore noisy prerender fetch rejection
+        } else if ((e as any)?.__isAuthError || (typeof msg === 'string' && msg.includes('AuthSessionMissingError'))) {
+            // no session during prerender; harmless
+        } else {
+            console.error('barber dashboard: error checking user role', e);
+        }
     }
 
     return (
