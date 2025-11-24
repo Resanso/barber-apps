@@ -7,6 +7,7 @@ type PatchPayload = {
   phone?: string | null;
   full_name?: string | null;
   service?: string | null;
+  status?: 'at served' | 'at queue' | null;
   service_time?: string | null;
 };
 
@@ -27,6 +28,12 @@ export async function PATCH(req: NextRequest, context: any) {
     if (body.service !== undefined) payload.service = body.service ?? null;
     if (body.service_time !== undefined)
       payload.service_time = body.service_time ?? null;
+    // allow status change only if provided
+    if (body.status !== undefined) {
+      const st = body.status;
+      if (st === 'at served' || st === 'at queue') payload.status = st;
+      else payload.status = null;
+    }
 
     const supabase = await createSupabaseClient();
 
@@ -61,9 +68,21 @@ export async function PATCH(req: NextRequest, context: any) {
         }
       );
 
+      // Only allow status updates for barber role when using service client.
+      const updatePayload: any = { ...payload };
+
+      // If barber sets status to 'at served', set ETA timestamps server-side
+      if (updatePayload.status === 'at served') {
+        const now = new Date();
+        const etaStart = now.toISOString();
+        const etaEnd = new Date(now.getTime() + 30 * 60 * 1000).toISOString();
+        updatePayload.eta_start = etaStart;
+        updatePayload.eta_end = etaEnd;
+      }
+
       const { data, error } = await (svc as any)
         .from('private_items')
-        .update({ ...payload })
+        .update(updatePayload)
         .eq('id', id)
         .select()
         .single();
@@ -80,9 +99,14 @@ export async function PATCH(req: NextRequest, context: any) {
     }
 
     // Otherwise enforce owner-only update via session client
+    // Non-barber users are allowed to update only certain fields (not status)
+    const ownerPayload = { ...payload } as any;
+    // strip status from owner updates to enforce barber-only status changes
+    if (ownerPayload.status !== undefined) delete ownerPayload.status;
+
     const { data, error } = await (supabase as any)
       .from('private_items')
-      .update({ ...payload })
+      .update(ownerPayload)
       .eq('id', id)
       .eq('owner_id', user.id)
       .select()

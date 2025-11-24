@@ -153,6 +153,23 @@ export const PrivateItemsList = ({
                                   <strong>Service:</strong> {it.service}
                                 </div>
                               )}
+                              {it.eta_start && (
+                                <div className="text-sm">
+                                  <strong>ETA Start:</strong>{' '}
+                                  {new Date(String(it.eta_start)).toLocaleString()}
+                                </div>
+                              )}
+                              {it.eta_end && (
+                                <div className="text-sm">
+                                  <strong>ETA End:</strong>{' '}
+                                  {new Date(String(it.eta_end)).toLocaleString()}
+                                </div>
+                              )}
+                              {it.status && (
+                                <div className="text-sm">
+                                  <strong>Status:</strong> {it.status}
+                                </div>
+                              )}
                               {it.barber && (
                                 <div className="text-sm">
                                   <strong>Barber:</strong> {it.barber}
@@ -171,8 +188,36 @@ export const PrivateItemsList = ({
                               )}
                             </div>
 
-                            <DialogFooter>
-                              <ConfirmDeleteItemDialog itemId={String(item.id)} />
+                            <DialogFooter className="flex flex-col gap-2">
+                              {isBarber && (
+                                <div className="flex items-center gap-2 w-full">
+                                  <select
+                                    className="border rounded px-2 py-1 text-sm flex-1"
+                                    defaultValue={it.status ?? 'at queue'}
+                                    onChange={async (e) => {
+                                      const newStatus = e.target.value;
+                                      try {
+                                        const res = await fetch(`/api/private-items/update/${item.id}`, {
+                                          method: 'PATCH',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ status: newStatus }),
+                                        });
+                                        if (!res.ok) throw new Error('Failed to update');
+                                      } catch (err) {
+                                        console.error('Failed to update status', err);
+                                        alert('Failed to update status');
+                                      }
+                                    }}
+                                  >
+                                    <option value="at queue">At Queue</option>
+                                    <option value="at served">At Served</option>
+                                  </select>
+                                  <ConfirmDeleteItemDialog itemId={String(item.id)} />
+                                </div>
+                              )}
+                              {!isBarber && (
+                                <ConfirmDeleteItemDialog itemId={String(item.id)} />
+                              )}
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>

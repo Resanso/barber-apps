@@ -191,7 +191,10 @@ export default function WaitlistRealtime({ initialItems = [] }: WaitlistRealtime
                   <th className="px-6 py-4">Customer</th>
                   <th className="px-6 py-4">Service</th>
                   <th className="px-6 py-4">Barber</th>
+                  <th className="px-6 py-4">Type</th>
+                  <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Schedule</th>
+                  <th className="px-6 py-4">ETA</th>
                   <th className="px-6 py-4">Created At</th>
                 </tr>
               </thead>
@@ -238,6 +241,20 @@ export default function WaitlistRealtime({ initialItems = [] }: WaitlistRealtime
                         <div className="text-sm text-gray-700">{barber}</div>
                       </td>
 
+                      {/* Type Column */}
+                      <td className="px-6 py-4 align-top">
+                        <div className="text-sm text-gray-700">{it.type ?? '—'}</div>
+                      </td>
+
+                      {/* Status Column */}
+                      <td className="px-6 py-4 align-top">
+                        <div className="text-sm">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${it.status === 'at served' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-yellow-50 text-yellow-800 border border-yellow-100'}`}>
+                            {it.status === 'at served' ? 'Served' : 'Queue'}
+                          </span>
+                        </div>
+                      </td>
+
                       {/* Schedule Column */}
                       <td className="px-6 py-4 align-top">
                         <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -245,6 +262,20 @@ export default function WaitlistRealtime({ initialItems = [] }: WaitlistRealtime
                           <span className="font-medium">
                             {serviceTime ? formatDate(serviceTime) : '—'}
                           </span>
+                        </div>
+                      </td>
+
+                      {/* ETA Column */}
+                      <td className="px-6 py-4 align-top">
+                        <div className="text-sm text-gray-700">
+                          {it.eta_start ? (
+                            <div className="font-medium">{formatDate(String(it.eta_start))}</div>
+                          ) : (
+                            <div className="text-muted-foreground">—</div>
+                          )}
+                          {it.eta_end && (
+                            <div className="text-xs text-gray-500">end: {formatDate(String(it.eta_end))}</div>
+                          )}
                         </div>
                       </td>
 

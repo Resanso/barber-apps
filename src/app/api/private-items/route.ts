@@ -53,6 +53,7 @@ export async function POST(req: Request) {
     }
 
     // Ensure a profile row exists for this user (some users may not have a profile if trigger didn't run)
+    let userRole: string | null = null;
     try {
       const profilePayload = {
         id: user.id,
@@ -148,12 +149,12 @@ export async function POST(req: Request) {
         );
       }
 
-      // Confirm profile exists now
+      // Confirm profile exists now and read role (if present)
       const { data: existingProfile, error: fetchProfileErr } = await (
         supabase as any
       )
         .from('profiles')
-        .select('id')
+        .select('id, role')
         .eq('id', user.id)
         .single();
       if (fetchProfileErr || !existingProfile) {
@@ -169,6 +170,7 @@ export async function POST(req: Request) {
           { status: 500 }
         );
       }
+      userRole = (existingProfile as any).role ?? null;
     } catch (profileErr) {
       // Log but proceed — insertion into private_items will still fail if FK requires a profile
       console.warn('private-items: ensure profile error', profileErr);
@@ -183,7 +185,20 @@ export async function POST(req: Request) {
     if (full_name !== undefined) insertPayload.full_name = full_name;
     if (service !== undefined) insertPayload.service = service;
     if (barber !== undefined) insertPayload.barber = barber;
+    // determine item type based on submitter role: barber => 'walk in', others => 'book'
+    try {
+      const typeVal =
+        typeof userRole === 'string' && userRole === 'barber'
+          ? 'walk in'
+          : 'book';
+      insertPayload.type = typeVal;
+    } catch (e) {
+      // fallback safely
+      insertPayload.type = 'book';
+    }
     if (service_time !== undefined) insertPayload.service_time = service_time;
+    // default status for new items
+    insertPayload.status = 'at queue';
 
     // Insert without asking PostgREST to return the inserted row. Returning
     // rows requires the schema cache to include the column names; in some

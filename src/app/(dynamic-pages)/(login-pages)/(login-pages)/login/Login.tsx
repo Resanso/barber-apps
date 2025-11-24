@@ -4,6 +4,7 @@ import { EmailAndPassword } from '@/components/Auth/EmailAndPassword';
 import { EmailConfirmationPendingCard } from '@/components/Auth/EmailConfirmationPendingCard';
 import { RedirectingPleaseWaitCard } from '@/components/Auth/RedirectingPleaseWaitCard';
 import { RenderProviders } from '@/components/Auth/RenderProviders';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { signInWithProviderAction } from '@/data/auth/auth';
+import { ArrowLeftIcon } from 'lucide-react';
 import { useAction } from 'next-safe-action/hooks';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -136,6 +138,12 @@ export function Login({
       data-success={emailSentSuccessMessage}
       className="container data-success:flex items-center data-success:justify-center text-left max-w-lg mx-auto overflow-auto data-success:h-full min-h-[470px]"
     >
+      <div className="mb-4">
+        <Button variant="ghost" onClick={() => router.push('/')}>
+          <ArrowLeftIcon className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+      </div>
       {emailSentSuccessMessage ? (
         <EmailConfirmationPendingCard
           type={'login'}
