@@ -42,6 +42,14 @@ export default function BookingForm() {
         { id: 'tba', name: 'TBA' },
     ];
 
+    // Services that are mutually exclusive with "The Trich Experience"
+    const incompatibleWithTrich = new Set([
+        'The Cutting Edge',
+        'Trim & Treat',
+        'Creambath',
+        'Mask Off',
+    ]);
+
     function nextStep() {
         setError(null);
         if (step === 0) {
@@ -89,7 +97,10 @@ export default function BookingForm() {
                     setLoading(false);
                     return;
                 }
-                service_time_payload = parsed.toISOString();
+                // Send wall-clock local datetime without timezone information
+                const pad = (n: number) => String(n).padStart(2, '0');
+                const localStr = `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:00`;
+                service_time_payload = localStr;
             }
 
             const payload: any = {};
@@ -189,9 +200,33 @@ export default function BookingForm() {
                                                 type="checkbox"
                                                 className="checkbox"
                                                 checked={selectedServices.includes(s.name)}
+                                                disabled={
+                                                    // disable incompatible services when Trich is selected
+                                                    selectedServices.includes('The Trich Experience') &&
+                                                    !selectedServices.includes(s.name) &&
+                                                    incompatibleWithTrich.has(s.name)
+                                                }
                                                 onChange={(e) => {
-                                                    if (e.target.checked) setSelectedServices((prev) => [...prev, s.name]);
-                                                    else setSelectedServices((prev) => prev.filter((x) => x !== s.name));
+                                                    const isTrich = s.name === 'The Trich Experience';
+                                                    if (e.target.checked) {
+                                                        if (isTrich) {
+                                                            // If Trich is selected, replace selection with only Trich
+                                                            setSelectedServices([s.name]);
+                                                        } else {
+                                                            // If Trich already selected, do not allow adding incompatible items
+                                                            if (selectedServices.includes('The Trich Experience') && incompatibleWithTrich.has(s.name)) {
+                                                                return;
+                                                            }
+                                                            setSelectedServices((prev) => {
+                                                                // avoid duplicates
+                                                                if (prev.includes(s.name)) return prev;
+                                                                return [...prev, s.name];
+                                                            });
+                                                        }
+                                                    } else {
+                                                        // unchecked -> remove from selection
+                                                        setSelectedServices((prev) => prev.filter((x) => x !== s.name));
+                                                    }
                                                 }}
                                             />
                                         </div>

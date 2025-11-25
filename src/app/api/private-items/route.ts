@@ -1,6 +1,29 @@
+import servicesList from '@/data/services.json';
 import { createSupabaseClient } from '@/supabase-clients/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+
+function getTotalDurationMinutes(serviceStr: string | null | undefined) {
+  try {
+    if (!serviceStr) return 30; // fallback
+    const names = String(serviceStr)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    let total = 0;
+    for (const n of names) {
+      const found = (servicesList as any[]).find(
+        (s) => String(s.name).trim().toLowerCase() === n.toLowerCase()
+      );
+      if (found && typeof found.duration_minutes === 'number') {
+        total += found.duration_minutes;
+      }
+    }
+    return total > 0 ? total : 30;
+  } catch (e) {
+    return 30;
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -210,12 +233,21 @@ export async function POST(req: Request) {
       ) {
         insertPayload.eta_start = service_time;
 
-        // Also auto-calc eta_end = eta_start + 30 minutes for non-barber submissions
+        // Auto-calc eta_end based on service durations defined in services.json
         try {
           const start = new Date(String(service_time));
           if (!isNaN(start.getTime())) {
-            const end = new Date(start.getTime() + 30 * 60 * 1000);
-            insertPayload.eta_end = end.toISOString();
+            const totalMinutes = getTotalDurationMinutes(
+              insertPayload.service ?? null
+            );
+            const end = new Date(start.getTime() + totalMinutes * 60 * 1000);
+            const pad = (n: number) => String(n).padStart(2, '0');
+            const localEnd = `${end.getFullYear()}-${pad(
+              end.getMonth() + 1
+            )}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(
+              end.getMinutes()
+            )}:00`;
+            insertPayload.eta_end = localEnd;
           }
         } catch (e2) {
           // ignore if parsing fails

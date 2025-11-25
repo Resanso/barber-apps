@@ -1,6 +1,29 @@
+import servicesList from '@/data/services.json';
 import { createSupabaseClient } from '@/supabase-clients/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+
+function getTotalDurationMinutes(serviceStr: string | null | undefined) {
+  try {
+    if (!serviceStr) return 30; // fallback
+    const names = String(serviceStr)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    let total = 0;
+    for (const n of names) {
+      const found = (servicesList as any[]).find(
+        (s) => String(s.name).trim().toLowerCase() === n.toLowerCase()
+      );
+      if (found && typeof found.duration_minutes === 'number') {
+        total += found.duration_minutes;
+      }
+    }
+    return total > 0 ? total : 30;
+  } catch (e) {
+    return 30;
+  }
+}
 
 type PatchPayload = {
   metadata?: any;
@@ -73,11 +96,32 @@ export async function PATCH(req: NextRequest, context: any) {
 
       // If barber sets status to 'at served', set ETA timestamps server-side
       if (updatePayload.status === 'at served') {
+        // determine total minutes from the service string stored on the item
+        let totalMinutes = 30; // default fallback
+        try {
+          const lookup = await (svc as any)
+            .from('private_items')
+            .select('service')
+            .eq('id', id)
+            .single();
+          const serviceStr = lookup?.data?.service ?? null;
+          totalMinutes = getTotalDurationMinutes(serviceStr);
+        } catch (e) {
+          // ignore and keep fallback
+        }
+
+        // Format local wall-clock datetime without timezone (store exact wall-clock)
         const now = new Date();
-        const etaStart = now.toISOString();
-        const etaEnd = new Date(now.getTime() + 30 * 60 * 1000).toISOString();
-        updatePayload.eta_start = etaStart;
-        updatePayload.eta_end = etaEnd;
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const localNow = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+          now.getDate()
+        )}T${pad(now.getHours())}:${pad(now.getMinutes())}:00`;
+        const end = new Date(now.getTime() + totalMinutes * 60 * 1000);
+        const localEnd = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(
+          end.getDate()
+        )}T${pad(end.getHours())}:${pad(end.getMinutes())}:00`;
+        updatePayload.eta_start = localNow;
+        updatePayload.eta_end = localEnd;
       }
 
       const { data, error } = await (svc as any)
