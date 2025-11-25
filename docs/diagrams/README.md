@@ -32,19 +32,25 @@ Deskripsi singkat
 **Contoh Use Case (Mermaid)**
 
 ```mermaid
-%% Use Case Diagram - barber-apps
-usecaseDiagram
-  actor Customer
-  actor Staff
-  Customer --> (Browse Services)
-  Customer --> (Create Booking)
-  Customer --> (View Waitlist)
-  Customer --> (Manage Private Items)
-  Customer --> (Sign Up / Login)
-  Staff --> (Manage Bookings)
-  Staff --> (Update ETA / Process Waitlist)
-  (Create Booking) ..> (Calculate ETA) : include
-  (View Waitlist) ..> (Realtime Updates) : include
+%% Use Case (converted to flowchart for GitHub mermaid compatibility)
+graph LR
+  Customer[Customer]
+  Staff[Staff]
+  Browse(Browse Services)
+  Create(Create Booking)
+  View(View Waitlist)
+  ManagePrivate(Manage Private Items)
+  Auth(Sign Up / Login)
+  ManageBookings(Manage Bookings)
+  UpdateETA(Update ETA / Process Waitlist)
+
+  Customer --> Browse
+  Customer --> Create
+  Customer --> View
+  Customer --> ManagePrivate
+  Customer --> Auth
+  Staff --> ManageBookings
+  Staff --> UpdateETA
 ```
 
 **Sequence Diagrams (template Mermaid & penjelasan)**
@@ -60,8 +66,8 @@ sequenceDiagram
 
   C->>UI: pilih layanan + set waktu lokal (YYYY-MM-DDTHH:MM:SS)
   UI->>API: POST /api/private-items {service_id, service_time_local}
-  API->>DB: insert private_item; compute eta_start/eta_end (gunakan durations dari `services.json`)
-  DB-->>API: success (private_item)
+  API->>DB: insert private_item; compute eta_start/eta_end (gunakan durations dari services.json)
+  DB->>API: success (private_item)
   API-->>UI: 201 created
   UI-->>C: tampilkan konfirmasi
 ```
