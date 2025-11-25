@@ -64,12 +64,13 @@ sequenceDiagram
   participant API as /api/private-items
   participant DB as Supabase
 
-  C->>UI: pilih layanan + set waktu lokal (YYYY-MM-DDTHH:MM:SS)
-  UI->>API: POST /api/private-items {service_id, service_time_local}
-  API->>DB: insert private_item; compute eta_start/eta_end (gunakan durations dari services.json)
+  C->>UI: pilih layanan dan set waktu lokal YYYY-MM-DDTHH:MM:SS
+  UI->>API: POST /api/private-items (service_id, service_time_local)
+  API->>DB: insert private_item
+  API->>DB: compute eta_start and eta_end (use services.json)
   DB->>API: success (private_item)
-  API-->>UI: 201 created
-  UI-->>C: tampilkan konfirmasi
+  API->>UI: 201 created
+  UI->>C: tampilkan konfirmasi
 ```
 
 2. Booking via Private Items (Book from list)
@@ -86,10 +87,11 @@ sequenceDiagram
   PList->>Modal: open dialog (pre-filled items)
   C->>Modal: konfirmasi booking (kirim waktu lokal)
   Modal->>API: POST /api/private-items/book
-  API->>DB: create booking, compute eta_end
-  DB-->>API: ok
-  API-->>Modal: success
-  Modal-->>PList: close + show toast
+  API->>DB: create booking
+  API->>DB: compute eta_end
+  DB->>API: ok
+  API->>Modal: success
+  Modal->>PList: close and show toast
 ```
 
 3. Waitlist realtime — client menerima update ETA dari Supabase
@@ -102,7 +104,7 @@ sequenceDiagram
 
   Client->>Realtime: subscribe to waitlist channel
   Realtime->>Client: push updates (row changes with eta_end)
-  Client-->>UI: re-render WaitlistRealtime component
+  Client->>UI: re-render WaitlistRealtime component
 ```
 
 4. Auth (login / signup)
@@ -115,11 +117,11 @@ sequenceDiagram
   participant DB
 
   User->>UI: submit credentials
-  UI->>AuthAPI: POST /api/auth (login/signup)
-  AuthAPI->>DB: verify/create user
-  DB-->>AuthAPI: ok
-  AuthAPI-->>UI: session/token
-  UI-->>User: redirect / show success
+  UI->>AuthAPI: POST /api/auth (login or signup)
+  AuthAPI->>DB: verify or create user
+  DB->>AuthAPI: ok
+  AuthAPI->>UI: session or token
+  UI->>User: redirect or show success
 ```
 
 **Rekomendasi struktur file diagram**
