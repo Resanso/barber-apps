@@ -7,9 +7,7 @@ import {
   SidebarMenuItem
 } from '@/components/ui/sidebar';
 import { getCachedLoggedInVerifiedSupabaseUser } from '@/rsc-data/supabase';
-import {
-  Home
-} from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { AppSidebarContent } from './app-sidebar-client';
@@ -24,10 +22,10 @@ async function SidebarHeaderContent() {
         <SidebarMenuButton size="lg" asChild>
           <Link href="/">
             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Home className="size-4" />
+              <Image src="/logos/barber-logo.png" alt="Barber App" width={44} height={44} className="rounded-md" />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">Barber App</span>
+              <span className="truncate font-semibold">Trich Barberspace</span>
               <span className="truncate text-xs text-muted-foreground">
                 Realtime Booking System
               </span>

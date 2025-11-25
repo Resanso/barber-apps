@@ -1,5 +1,6 @@
 "use client";
 
+import BookingForm from '@/app/(dynamic-pages)/(main-pages)/(logged-in-pages)/dashboard/booking-form';
 import { ConfirmDeleteItemDialog } from '@/app/(dynamic-pages)/(main-pages)/(logged-in-pages)/private-item/[privateItemId]/ConfirmDeleteItemDialog';
 import { T } from '@/components/ui/Typography';
 import { Badge } from '@/components/ui/badge';
@@ -7,12 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
+  Empty
 } from '@/components/ui/empty';
 import {
   Table,
@@ -27,8 +23,7 @@ import {
   Clock,
   ExternalLink,
   Lock,
-  PlusCircle,
-  ShieldCheck,
+  PlusCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -59,11 +54,14 @@ export const PrivateItemsList = ({
             </div>
             <T.Subtle>These items are only visible to logged in users</T.Subtle>
           </div>
-          <Link href="/dashboard/new">
-            <Button className="flex items-center gap-2">
-              <PlusCircle className="h-4 w-4" /> New Private Item
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {privateItems.length > 0 && <BookingForm />}
+            <Link href="/dashboard/new">
+              <Button className="flex items-center gap-2">
+                <PlusCircle className="h-4 w-4" /> New Private Item
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
 
@@ -155,7 +153,7 @@ export const PrivateItemsList = ({
                               )}
                               {it.eta_start && (
                                 <div className="text-sm">
-                                  <strong>ETA Start:</strong>{' '}
+                                  a<strong>ETA Start:</strong>{' '}
                                   {new Date(String(it.eta_start)).toLocaleString()}
                                 </div>
                               )}
@@ -231,24 +229,7 @@ export const PrivateItemsList = ({
         </Card>
       ) : (
         <Empty className="border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <ShieldCheck />
-            </EmptyMedia>
-            <EmptyTitle>No Private Items Available</EmptyTitle>
-            <EmptyDescription>
-              You haven't created any private items yet. Create your first one
-              to get started!
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Link href="/dashboard/new">
-              <Button className="flex items-center gap-2">
-                <PlusCircle className="h-4 w-4" /> Create Your First Private
-                Item
-              </Button>
-            </Link>
-          </EmptyContent>
+
         </Empty>
       )}
     </div>

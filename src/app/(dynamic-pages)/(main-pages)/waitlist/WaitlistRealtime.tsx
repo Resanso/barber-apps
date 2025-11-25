@@ -187,7 +187,7 @@ export default function WaitlistRealtime({ initialItems = [] }: WaitlistRealtime
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <tr className="bg-gray-50/50 border-b border-gray-200 text-xs font-semibold text-[#FF6700] uppercase tracking-wider">
                   <th className="px-6 py-4">Customer</th>
                   <th className="px-6 py-4">Service</th>
                   <th className="px-6 py-4">Barber</th>
@@ -268,13 +268,10 @@ export default function WaitlistRealtime({ initialItems = [] }: WaitlistRealtime
                       {/* ETA Column */}
                       <td className="px-6 py-4 align-top">
                         <div className="text-sm text-gray-700">
-                          {it.eta_start ? (
-                            <div className="font-medium">{formatDate(String(it.eta_start))}</div>
+                          {it.eta_end ? (
+                            <div className="font-medium">{formatDate(String(it.eta_end))}</div>
                           ) : (
                             <div className="text-muted-foreground">—</div>
-                          )}
-                          {it.eta_end && (
-                            <div className="text-xs text-gray-500">end: {formatDate(String(it.eta_end))}</div>
                           )}
                         </div>
                       </td>

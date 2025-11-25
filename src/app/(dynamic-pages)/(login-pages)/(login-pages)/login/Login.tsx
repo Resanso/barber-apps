@@ -160,9 +160,9 @@ export function Login({
         <div className="space-y-8 bg-background p-6 rounded-lg shadow-sm dark:border">
           <Tabs defaultValue="password" className="md:min-w-[400px]">
             <TabsContent value="password">
-              <Card className="border-none shadow-none">
+              <Card className="border-none shadow-xl bg-emerald-50 p-6">
                 <CardHeader className="py-6 px-0">
-                  <CardTitle>Login to Barbers</CardTitle>
+                  <CardTitle>Login to Trich Barberspace</CardTitle>
                   <CardDescription>
                     Login with the account you used to signup.
                   </CardDescription>

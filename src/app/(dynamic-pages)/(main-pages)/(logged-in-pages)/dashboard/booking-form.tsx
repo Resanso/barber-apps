@@ -14,7 +14,11 @@ import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function BookingForm() {
+type BookingFormProps = {
+    showTrigger?: boolean;
+};
+
+export default function BookingForm({ showTrigger = true }: BookingFormProps) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
     const [step, setStep] = useState(0); // 0: info, 1: services, 2: time
@@ -140,9 +144,11 @@ export default function BookingForm() {
             setOpen(v);
             if (!v) resetForm();
         }}>
-            <DialogTrigger asChild>
-                <Button>Book</Button>
-            </DialogTrigger>
+            {showTrigger && (
+                <DialogTrigger asChild>
+                    <Button>Book</Button>
+                </DialogTrigger>
+            )}
 
             <DialogContent>
                 <DialogHeader>

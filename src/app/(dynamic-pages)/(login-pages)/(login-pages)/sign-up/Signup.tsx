@@ -1,6 +1,9 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { useAction } from 'next-safe-action/hooks';
+import Link from 'next/link';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -15,7 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 
 import { signInWithProviderAction } from '@/data/auth/auth';
 import type { AuthProvider } from '@/types';
@@ -113,17 +116,21 @@ export function SignUp({ next }: SignUpProps) {
         />
       ) : (
         <div className="space-y-8 bg-background p-6 rounded-lg shadow-sm dark:border">
+          <div className="mb-2">
+            <Link href="/" className="inline-block">
+              <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+            </Link>
+          </div>
           <Tabs defaultValue="password" className="md:min-w-[400px]">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="password">Password</TabsTrigger>
-              <TabsTrigger value="magic-link">Magic Link</TabsTrigger>
-              <TabsTrigger value="social-login">Social Login</TabsTrigger>
-            </TabsList>
+
 
             <TabsContent value="password">
-              <Card className="border-none shadow-none">
+              <Card className="border-none shadow-none bg-emerald-50 p-6">
                 <CardHeader className="py-6 px-0">
-                  <CardTitle>Register to NextBase</CardTitle>
+                  <CardTitle>Register to Trich Barberspace</CardTitle>
                   <CardDescription>
                     Create an account with your email and password
                   </CardDescription>

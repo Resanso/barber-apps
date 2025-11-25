@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Suspense } from 'react';
 import { z } from 'zod';
 import { SignUp } from './Signup';
@@ -17,7 +18,18 @@ async function SignUpWrapper(props: {
 export default async function SignUpPage(props: {
   searchParams: Promise<unknown>;
 }) {
-  return <Suspense>
-    <SignUpWrapper searchParams={props.searchParams} />
-  </Suspense>
+  return (
+    <div className="min-h-screen ">
+      {/* logo fixed to top-left of page */}
+      <div className="fixed top-8 left-8 z-50">
+        <Image src="/logos/barber-logo.png" alt="Barber Logo" width={100} height={100} className="rounded-md bg-black" />
+      </div>
+
+      <main className="min-h-screen flex items-center justify-center">
+        <Suspense>
+          <SignUpWrapper searchParams={props.searchParams} />
+        </Suspense>
+      </main>
+    </div>
+  );
 }
