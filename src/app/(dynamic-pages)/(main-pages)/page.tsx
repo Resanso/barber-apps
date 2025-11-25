@@ -108,7 +108,7 @@ export default function LandingPage() {
 
             <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
               <Button size="lg" className="bg-slate-50 text-[#204B49] hover:bg-slate-200 h-12 px-8 font-semibold shadow-lg shadow-black/20" asChild>
-                <Link href="/booking">
+                <Link href="/login">
                   Book Appointment <Calendar className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
