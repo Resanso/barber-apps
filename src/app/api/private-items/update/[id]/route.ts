@@ -99,12 +99,16 @@ export async function PATCH(req: NextRequest, context: any) {
         // determine total minutes from the service string stored on the item
         let totalMinutes = 30; // default fallback
         try {
-          const lookup = await (svc as any)
-            .from('private_items')
-            .select('service')
-            .eq('id', id)
-            .single();
-          const serviceStr = lookup?.data?.service ?? null;
+          // If service is being updated, use the new service value, otherwise fetch existing
+          let serviceStr = updatePayload.service;
+          if (!serviceStr) {
+            const lookup = await (svc as any)
+              .from('private_items')
+              .select('service')
+              .eq('id', id)
+              .single();
+            serviceStr = lookup?.data?.service ?? null;
+          }
           totalMinutes = getTotalDurationMinutes(serviceStr);
         } catch (e) {
           // ignore and keep fallback
@@ -122,6 +126,32 @@ export async function PATCH(req: NextRequest, context: any) {
         )}T${pad(end.getHours())}:${pad(end.getMinutes())}:00`;
         updatePayload.eta_start = localNow;
         updatePayload.eta_end = localEnd;
+      } else if (updatePayload.service) {
+        // If service is updated but NOT setting status to 'at served',
+        // we should try to update eta_end if eta_start exists.
+        try {
+          const lookup = await (svc as any)
+            .from('private_items')
+            .select('eta_start')
+            .eq('id', id)
+            .single();
+          
+          const currentEtaStart = lookup?.data?.eta_start;
+          if (currentEtaStart) {
+             const totalMinutes = getTotalDurationMinutes(updatePayload.service);
+             const start = new Date(String(currentEtaStart));
+             if (!isNaN(start.getTime())) {
+                const end = new Date(start.getTime() + totalMinutes * 60 * 1000);
+                const pad = (n: number) => String(n).padStart(2, '0');
+                const localEnd = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(
+                  end.getDate()
+                )}T${pad(end.getHours())}:${pad(end.getMinutes())}:00`;
+                updatePayload.eta_end = localEnd;
+             }
+          }
+        } catch (e) {
+          // ignore
+        }
       }
 
       const { data, error } = await (svc as any)
@@ -147,6 +177,33 @@ export async function PATCH(req: NextRequest, context: any) {
     const ownerPayload = { ...payload } as any;
     // strip status from owner updates to enforce barber-only status changes
     if (ownerPayload.status !== undefined) delete ownerPayload.status;
+
+    // If owner updates service, also try to update eta_end if eta_start exists
+    if (ownerPayload.service) {
+        try {
+          const lookup = await (supabase as any)
+            .from('private_items')
+            .select('eta_start')
+            .eq('id', id)
+            .single();
+          
+          const currentEtaStart = lookup?.data?.eta_start;
+          if (currentEtaStart) {
+             const totalMinutes = getTotalDurationMinutes(ownerPayload.service);
+             const start = new Date(String(currentEtaStart));
+             if (!isNaN(start.getTime())) {
+                const end = new Date(start.getTime() + totalMinutes * 60 * 1000);
+                const pad = (n: number) => String(n).padStart(2, '0');
+                const localEnd = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(
+                  end.getDate()
+                )}T${pad(end.getHours())}:${pad(end.getMinutes())}:00`;
+                ownerPayload.eta_end = localEnd;
+             }
+          }
+        } catch (e) {
+          // ignore
+        }
+    }
 
     const { data, error } = await (supabase as any)
       .from('private_items')
